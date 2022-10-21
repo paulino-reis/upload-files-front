@@ -11,60 +11,54 @@ import { UploadFileService } from '../services/upload-file.service';
 export class UploadFilesComponent implements OnInit {
 
   selectedFiles?: FileList;
-  currentFile?: File;
-  progress = 0;
-  message = '';
+  progressInfos: any[] = [];
+  message: string[] = [];
+
+  fileInfos?: Observable<any>;
 
   ngOnInit(): void {
     this.fileInfos = this.uploadService.getFiles();
   }
 
-  fileInfos?: Observable<any>;
-
   constructor(private uploadService: UploadFileService) { }
 
-  selectFile(event: any): void {
+  selectFiles(event: any): void {
+    this.message = [];
+    this.progressInfos = [];
     this.selectedFiles = event.target.files;
   }
 
-  upload(): void {
-    this.progress = 0;
-
+  uploadFiles(): void {
+    this.message = [];
+  
     if (this.selectedFiles) {
-      const file: File | null = this.selectedFiles.item(0);
-
-      if (file) {
-        this.currentFile = file;
-
-        this.uploadService.upload(this.currentFile).subscribe(
-          (event: any) => {
-            if (event.type === HttpEventType.UploadProgress) {
-              this.progress = Math.round(100 * event.loaded / event.total);
-            } else if (event instanceof HttpResponse) {
-              this.message = event.body.message;
-              this.fileInfos = this.uploadService.getFiles();
-            }
-          },
-          (err: any) => {
-            console.log(err);
-            this.progress = 0;
-
-            if (err.error && err.error.message) {
-              this.message = err.error.message;
-            } else {
-              this.message = 'Não foi possível carregar o(s) arquivo(s)!';
-            }
-
-            this.currentFile = undefined;
-          });
-
+      for (let i = 0; i < this.selectedFiles.length; i++) {
+        this.upload(i, this.selectedFiles[i]);
       }
-
-      this.selectedFiles = undefined;
     }
   }
 
-  limpar() : void{
-    
+  upload(idx: number, file: File): void {
+    this.progressInfos[idx] = { value: 0, fileName: file.name };
+  
+    if (file) {
+      this.uploadService.upload(file).subscribe(
+        (event: any) => {
+          if (event.type === HttpEventType.UploadProgress) {
+            this.progressInfos[idx].value = Math.round(100 * event.loaded / event.total);
+          } else if (event instanceof HttpResponse) {
+            const msg = 'Arquivo(s) importado com sucesso: ' + file.name;
+            this.message.push(msg);
+            this.fileInfos = this.uploadService.getFiles();
+          }
+        },
+        (err: any) => {
+          this.progressInfos[idx].value = 0;
+          const msg = 'Não foi possível importar o arquivo: ' + file.name;
+          this.message.push(msg);
+          this.fileInfos = this.uploadService.getFiles();
+        });
+    }
   }
+
 }
