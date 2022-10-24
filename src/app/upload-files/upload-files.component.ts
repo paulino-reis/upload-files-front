@@ -11,8 +11,8 @@ import { UploadFileService } from '../services/upload-file.service';
 export class UploadFilesComponent implements OnInit {
 
   selectedFiles?: FileList;
-  progressInfos: any[] = [];
   message: string[] = [];
+  filesUploaded: number = 0;
 
   fileInfos?: Observable<any>;
 
@@ -24,7 +24,6 @@ export class UploadFilesComponent implements OnInit {
 
   selectFiles(event: any): void {
     this.message = [];
-    this.progressInfos = [];
     this.selectedFiles = event.target.files;
   }
 
@@ -34,26 +33,25 @@ export class UploadFilesComponent implements OnInit {
     if (this.selectedFiles) {
       for (let i = 0; i < this.selectedFiles.length; i++) {
         this.upload(i, this.selectedFiles[i]);
+        this.filesUploaded++;
       }
     }
+  
   }
 
   upload(idx: number, file: File): void {
-    this.progressInfos[idx] = { value: 0, fileName: file.name };
   
     if (file) {
       this.uploadService.upload(file).subscribe(
         (event: any) => {
-          if (event.type === HttpEventType.UploadProgress) {
-            this.progressInfos[idx].value = Math.round(100 * event.loaded / event.total);
-          } else if (event instanceof HttpResponse) {
-            const msg = 'Arquivo(s) importado com sucesso: ' + file.name;
+          if (event instanceof HttpResponse) {
+            const msg = `Arquivo ${file.name} importado com sucesso: `;
             this.message.push(msg);
-            this.fileInfos = this.uploadService.getFiles();
+            this.filesUploaded = 0;
+            //this.fileInfos = this.uploadService.getFiles();
           }
         },
         (err: any) => {
-          this.progressInfos[idx].value = 0;
           const msg = 'Não foi possível importar o arquivo: ' + file.name;
           this.message.push(msg);
           this.fileInfos = this.uploadService.getFiles();
