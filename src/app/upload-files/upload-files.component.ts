@@ -27,19 +27,21 @@ export class UploadFilesComponent implements OnInit {
     this.selectedFiles = event.target.files;
   }
 
-  uploadFiles(): void {
+  async uploadFiles(): Promise<void> {
     this.message = [];
   
     if (this.selectedFiles) {
+      this.message.push('Aguarde .. efetuando upload do(s) arquivo(s)');
       for (let i = 0; i < this.selectedFiles.length; i++) {
-        this.upload(i, this.selectedFiles[i]);
+        await this.upload(i, this.selectedFiles[i]);
         this.filesUploaded++;
       }
+      this.message = [];
     }
   
   }
 
-  upload(idx: number, file: File): void {
+  async upload(idx: number, file: File): Promise<void> {
   
     if (file) {
       this.uploadService.upload(file).subscribe(
